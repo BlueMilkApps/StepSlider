@@ -29,23 +29,27 @@ public class StepSlider: UISlider {
     @IBInspectable public var stepTickColor: UIColor = UIColor.lightGrayColor()
     @IBInspectable public var stepTickRounded: Bool = false
     
+    // Computeds
     var stepWidth: Double {
         return Double(trackWidth) / (Double(steps - 1))
     }
-    
     var thumbRect: CGRect {
         let trackRect = trackRectForBounds(bounds)
         return thumbRectForBounds(bounds, trackRect: trackRect, value: value)
     }
-    
     var trackWidth: CGFloat {
         return self.bounds.size.width - thumbRect.width
     }
-    
     var trackOffset: CGFloat {
         return (self.bounds.size.width - self.trackWidth) / 2
     }
     
+    // Properties for handling touch
+    var previousLocation = CGPointZero
+    var dragging = false
+    var originalValue: Int = 0
+    
+    // Methods
     override public func awakeFromNib() {
         super.awakeFromNib()
         setupView()
@@ -64,7 +68,7 @@ public class StepSlider: UISlider {
         // Remove the original track if custom
         if customTrack {
             
-            // Clear original track using transparent pixel
+            // Clear original track using a transparent pixel
             UIGraphicsBeginImageContextWithOptions(CGSizeMake(1, 1), false, 0.0)
             let transparentImage = UIGraphicsGetImageFromCurrentImageContext()
             UIGraphicsEndImageContext()
@@ -91,7 +95,7 @@ public class StepSlider: UISlider {
             let x = Double(trackOffset) + (Double(index) * stepWidth) - Double(stepTickWidth / 2)
             let y = Double(bounds.midY) - (stepTickHeight / 2)
             
-            // Create round or square tick bezier
+            // Create rounded/squared tick bezier
             let stepPath: UIBezierPath
             if customTrack && stepTickRounded {
                 stepPath = UIBezierPath(roundedRect: CGRect(x: x, y: y, width: Double(stepTickWidth), height: stepTickHeight), cornerRadius: 5)
@@ -104,13 +108,12 @@ public class StepSlider: UISlider {
         }
         
         CGContextRestoreGState(ctx)
-        
     }
-    
-    // MARK: - Touch
-    var previousLocation = CGPointZero
-    var dragging = false
-    var originalValue: Int = 0
+}
+
+
+// MARK: - Touch Handling
+extension StepSlider {
     
     override public func beginTrackingWithTouch(touch: UITouch, withEvent event: UIEvent?) -> Bool {
         let location = touch.locationInView(self)
@@ -138,9 +141,9 @@ public class StepSlider: UISlider {
         }
         
         if deltaLocation < 0 {
-            value = Float(clipValue(originalValue - deltaValue))  // Slider moved to left
+            value = Float(clipValue(originalValue - deltaValue))  // Slide left
         } else {
-            value = Float(clipValue(originalValue + deltaValue))  // Slider moved to right
+            value = Float(clipValue(originalValue + deltaValue))  // Slide right
         }
         
         // Update UI without animation
@@ -162,7 +165,6 @@ public class StepSlider: UISlider {
         }
     }
 }
-
 
 // MARK: - Helpers
 extension StepSlider {
